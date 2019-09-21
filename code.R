@@ -21,7 +21,27 @@ x
 #   tags$h5("Subsubsubsubheading"), 
 #   tags$h6("Subsubsubsubsubheading") 
 # ),
-
+###HTML notes for images, banner, etc
 # tags$div(
 #   HTML(paste("Select a year to view Alaska Fish Counts ", tags$span(style="color:red", "red"), sep = ""))
 # ),
+
+#tags$h1(id = "title1", "Alaska Fish Counts from 1976 - 2019"),
+#    #titlePanel("Alaska Fish Counts from 1976 - 2019"),
+#    #tags$b("This text is bold."),
+#    #tags$img(src = "fish_and_gamelogo.png", width = "50px", height = "50px"), ##NEED to put images in a another folder called www. Don't know why
+#    div(
+#      h1(style="background-color: black; color: white; height: 125px; padding: 10px; margin: 0px",
+#         
+#         HTML('<img src="fish_and_gamelogo.png" style="float:right; padding-right:25px" width="125px" height="100px"/>',
+#              'Alaska Fish Counts <br> 1976-2019'
+#         ))
+#    ),
+#    tags$div(
+#      tags$blockquote(
+#        tags$em("Science in the Last Frontier", cite = "Alaska Fish and Game"))
+#      
+#    ),
+#    #div creates a division of an html document
+#    
+#    HTML('<hr >'), #this makes a horizontonal line break; also works by tags$hr()
