@@ -4,13 +4,19 @@ library(lubridate)
 fish.data <- read_csv("ADU Specimen Analysis.csv")
 
 fish.data %>%
-  group_by(`Sampling Year`) %>%
+  filter(`Common Name` == "lingcod",
+         `Sampling Year` == 2018) %>%
+  group_by(`Management Area(s)`, `Age Bin`) %>%
   summarise(total.count = sum(`Specimen Count`)) %>%
-  ggplot(aes(x = `Sampling Year`, y = total.count)) +
-  geom_bar(stat = "identity")
+  ggplot(aes(x = `Age Bin`, y = total.count)) +
+  geom_bar(stat = "identity",
+           aes(fill = `Management Area(s)`))
 
 x <- unique(fish.data$`Common Name`)
 x
+
+includeHTML(paste0(getwd(),"/www/","adfgaboutus1.html"))
+
 #h1 - h6 coresonds to the text size: h1 is largest, then it sgets smaller as you go
 
 # tags$div(

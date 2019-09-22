@@ -9,15 +9,14 @@ library(ggthemes)
 
 ###To do
 #Use HTML to pretty up the ui
-#change it all to shinyDashboard but keep the adfg logo
-#make graph looking better
-#have an optino to sort by species
-#tab that desrcibes technique or gathering data
+#stop age axis of bar graph shoing decimals
+#look at chart icon
 
 data <- read_csv("ADU Specimen Analysis.csv")
 
+?as.Date
 fish.data <- data %>%
-  mutate(mgmtarea = ifelse(is.na(`Management Area(s)`),
+  mutate(`Management Area(s)` = ifelse(is.na(`Management Area(s)`),
                               "Not Specified",
                               `Management Area(s)`))
 # fish.data <- fish.data %>%
@@ -26,7 +25,8 @@ fish.data <- data %>%
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = "Alaska Fish Counts",
+  dashboardHeader(title = "Age Determination Unit",
+                  titleWidth = 300,
                   #have to add your image/html in a li wrapper with class dropdown in order to get it to display
                   tags$li(class = "dropdown",
                           tags$a(href="fish_and_gamelogo3.png", target="_blank", 
@@ -34,12 +34,16 @@ ui <- dashboardPage(
                           )) 
                   ),
   dashboardSidebar(
+    sidebarUserPanel("Alaska Fish and Game",
+                     # Image file should be in www/ subdir
+                     image = "fish_and_gamelogo3.png"
+    ),
     sidebarMenu(
       menuItem("Charts", tabName = "charts", icon = icon("dashboard"),
-               menuSubItem("Sub-item 1", tabName = "subitem1"),
-               menuSubItem("Sub-item 2", tabName = "subitem2")
+               menuSubItem("All Species", tabName = "subitem1"),
+               menuSubItem("Individual Species", tabName = "subitem2")
       ),
-      menuItem("Data Methods", tabName = "methods", icon = icon("th"))
+      menuItem("About ADU", tabName = "methods", icon = icon("th"))
     )),
     
     
@@ -51,54 +55,40 @@ ui <- dashboardPage(
                           min = 1976,
                           max = 2019,
                           value = 2015,
-                          sep = "")),
-              box(plotlyOutput("plot1"))),
+                          sep = ""),
+                  width = 3),
+              box(plotlyOutput("plot1"),
+                  width = 9)),
       tabItem("subitem2",
               box(
                 selectInput("select1",
-                            label = tags$h2("select a fish"),
-                            choices = unique(fish.data$`Common Name`))
-              ),
+                            label = tags$h4("select a fish"),
+                            choices = sort(unique(fish.data$`Common Name`)))),
+              box(sliderInput("slider2",
+                              label = tags$span(style = "color:black", "Select a Year"),
+                              min = 1976,
+                              max = 2019,
+                              value = 2015,
+                              sep = "")),
               box(
-                plotlyOutput("plot2")))
+                plotlyOutput("plot2")
+                ),
+              box(
+                plotOutput("plot3")
+              )),
+      tabItem("methods",
+              includeHTML(paste0(getwd(),"/www/","adfgaboutus1.html"))
+      )
       )
     )
   )
- 
-# ui <- fluidPage(
-#   
-#    
-#    # Application title
-#    
-#    
-#    #tags$hr(),
-#    sidebarLayout(
-#       sidebarPanel(
-#          sliderInput("slider1",
-#                      label = tags$span(style = "color:blue", "Select a Year"),
-#                      min = 1976,
-#                      max = 2019,
-#                      value = 2015,
-#                      sep = ""),
-#                      #width="200px") #controls width of the slider
-#          selectInput("select1",
-#                      label = tags$h2("select a fish"),
-#                      choices = unique(fish.data$`Common Name`))
-#       ),
-#       
-#       # Show a plot of the generated distribution
-#       mainPanel(
-#          plotlyOutput("plot1")
-#       )
-#    )
-# )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
    
   fishyear <- reactive(fish.data %>%
                          filter(`Sampling Year` == input$slider1) %>%
-                        group_by(`mgmtarea`,`Common Name`) %>% #having two groubys and sumamrizing with sum gets the graph to show aggregated columns
+                        group_by(`Management Area(s)`,`Common Name`) %>% #having two groubys and sumamrizing with sum gets the graph to show aggregated columns
                         summarize(`Specimen Count` = sum(`Specimen Count`)
                                   ) 
   )
@@ -107,34 +97,53 @@ server <- function(input, output) {
       fishyear() %>%
        ggplot(aes(x = `Common Name`, y = `Specimen Count`)) +
        geom_bar(stat = "identity",
-                aes(fill = mgmtarea)) +
-       labs(title = paste(as.character(input$slider1), "Sample Counts of Alaskan Fish"),
+                aes(fill = `Management Area(s)`)) +
+       labs(title = paste(as.character(input$slider1), "Counts of Alaskan Fish Aged by ADU"),
             caption = "(based on data from Alaska Fish and Game)",
             y = "Count",
             x = "Fish Common Name") +
        theme_economist() +
        theme(plot.title = element_text(color = "black", size = 16, face = "bold"),
              axis.text.x = element_text(angle = 90, hjust = 1))
-      
-   })
+    })
    
    specificfish <- reactive(fish.data %>%
                               filter(`Common Name` == input$select1) %>%
-                              group_by(`mgmtarea`,`Sampling Year`) %>%
+                              group_by(`Management Area(s)`,`Sampling Year`) %>%
                               summarize(`Specimen Count` = sum(`Specimen Count`))
                 )
    output$plot2 <- renderPlotly({
      specificfish() %>%
        ggplot(aes(x = `Sampling Year`, y = `Specimen Count`)) +
        geom_bar(stat = "identity",
-                aes(fill = mgmtarea)) +
+                aes(fill = `Management Area(s)`)) +
        labs(title = paste(as.character(input$select1), "Sample Counts"),
             caption = "(based on data from Alaska Fish and Game)",
             y = "Count",
             x = "Year") +
        theme_economist() +
-       theme(plot.title = element_text(color = "black", size = 16, face = "bold"),
-             axis.text.x = element_text(angle = 90, hjust = 1))
+       theme(plot.title = element_text(color = "black", size = 16, face = "bold"))
+             
+   })
+   
+   specificfishyear <- reactive(fish.data %>%
+                              filter(`Common Name` == input$select1,
+                                     `Sampling Year` == input$slider2) %>%
+                              group_by(`Management Area(s)`,`Age Bin`) %>%
+                              summarize(`Specimen Count` = sum(`Specimen Count`)))
+   
+   output$plot3 <- renderPlot({
+     specificfishyear() %>%
+       ggplot(aes(x = `Age Bin`,
+                  y = `Specimen Count`)) +
+       geom_bar(stat = "identity",
+                aes(fill = `Management Area(s)`)) +
+       labs(title = paste("Age Distribution of Sampled ",as.character(input$select1), "from",as.character(input$slider2)),
+            caption = "(based on data from Alaska Fish and Game)",
+            y = "Count",
+            x = "Year") +
+       theme_economist() +
+       theme(plot.title = element_text(color = "black", size = 16, face = "bold"))
    })
 }
 
