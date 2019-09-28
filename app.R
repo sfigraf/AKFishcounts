@@ -13,8 +13,9 @@ library(ggthemes)
 #look at chart icon
 
 data <- read_csv("ADU Specimen Analysis.csv")
+data$`Age Bin`[data$`Age Bin` %in% "20-Nov"] <- "11-20" #changes anything read as 20-nov in the age bin column as 11-20 instead
+data$`Sampling Year` <- as.character(data$`Sampling Year`)
 
-?as.Date
 fish.data <- data %>%
   mutate(`Management Area(s)` = ifelse(is.na(`Management Area(s)`),
                               "Not Specified",
@@ -40,8 +41,8 @@ ui <- dashboardPage(
     ),
     sidebarMenu(
       menuItem("Charts", tabName = "charts", icon = icon("dashboard"),
-               menuSubItem("All Species", tabName = "subitem1"),
-               menuSubItem("Individual Species", tabName = "subitem2")
+               menuSubItem("Individual Species", tabName = "subitem1"),
+               menuSubItem("All Species Sample Counts", tabName = "subitem2")
       ),
       menuItem("About ADU", tabName = "methods", icon = icon("th"))
     )),
@@ -49,7 +50,7 @@ ui <- dashboardPage(
     
   dashboardBody(
     tabItems(
-            tabItem("subitem1",
+            tabItem("subitem2",
               box(sliderInput("slider1",
                           label = tags$span(style = "color:blue", "Select a Year"),
                           min = 1976,
@@ -59,13 +60,13 @@ ui <- dashboardPage(
                   width = 3),
               box(plotlyOutput("plot1"),
                   width = 9)),
-      tabItem("subitem2",
+      tabItem("subitem1",
               box(
                 selectInput("select1",
-                            label = tags$h4("select a fish"),
+                            label = tags$h4(tags$b("Select a Fish")),
                             choices = sort(unique(fish.data$`Common Name`)))),
               box(sliderInput("slider2",
-                              label = tags$span(style = "color:black", "Select a Year"),
+                              label = tags$h4(tags$b("Select a Year")),
                               min = 1976,
                               max = 2019,
                               value = 2015,
@@ -117,12 +118,13 @@ server <- function(input, output) {
        ggplot(aes(x = `Sampling Year`, y = `Specimen Count`)) +
        geom_bar(stat = "identity",
                 aes(fill = `Management Area(s)`)) +
-       labs(title = paste(as.character(input$select1), "Sample Counts"),
+       labs(title = paste0("Amount of \"", as.character(input$select1), "\" Aged by ADU"),
             caption = "(based on data from Alaska Fish and Game)",
             y = "Count",
             x = "Year") +
        theme_economist() +
-       theme(plot.title = element_text(color = "black", size = 16, face = "bold"))
+       theme(plot.title = element_text(color = "black", size = 16, face = "bold"),
+             axis.text.x = element_text(angle = 90, hjust = 1))
              
    })
    
@@ -138,10 +140,10 @@ server <- function(input, output) {
                   y = `Specimen Count`)) +
        geom_bar(stat = "identity",
                 aes(fill = `Management Area(s)`)) +
-       labs(title = paste("Age Distribution of Sampled ",as.character(input$select1), "from",as.character(input$slider2)),
+       labs(title = paste0("Age Distribution of Sampled \"",as.character(input$select1), "\" from ",as.character(input$slider2)),
             caption = "(based on data from Alaska Fish and Game)",
             y = "Count",
-            x = "Year") +
+            x = "Age Bin") +
        theme_economist() +
        theme(plot.title = element_text(color = "black", size = 16, face = "bold"))
    })

@@ -15,7 +15,11 @@ fish.data %>%
 x <- unique(fish.data$`Common Name`)
 x
 
-includeHTML(paste0(getwd(),"/www/","adfgaboutus1.html"))
+includeHTML(paste0(getwd(),"/www/","adfgaboutus1.html")) #was trying to get a link stragiht from website
+
+data$`Age Bin`[data$`Age Bin` %in% "20-Nov"] <- "11-20"
+
+
 
 #h1 - h6 coresonds to the text size: h1 is largest, then it sgets smaller as you go
 
